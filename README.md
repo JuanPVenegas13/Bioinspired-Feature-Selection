@@ -47,3 +47,15 @@ tests/            pruebas con pytest
 
 - [ ] Fase 1 — datos, función de fitness, BPSO y CBPSO-MIWS
 - [ ] Fase 2 — GA, CBGWO, experimentos y análisis
+
+## Problemas comunes
+
+**`ModuleNotFoundError: No module named 'bfs'` (macOS)**
+
+Pasa cuando el repo está en una carpeta sincronizada con iCloud (`Desktop`, `Documents`): macOS marca como oculto el archivo `.pth` que uv usa para instalar el paquete, y Python lo ignora. Solución:
+
+```bash
+chflags -R nohidden .venv
+```
+
+Si vuelve a pasar después de un `uv sync`, repite el comando. Para evitarlo por completo, clona el repo fuera de iCloud (por ejemplo en `~/Proyectos/`).
