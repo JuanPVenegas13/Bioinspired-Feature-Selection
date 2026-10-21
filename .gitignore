@@ -1,0 +1,21 @@
+# Entorno de uv
+.venv/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+# Herramientas
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# macOS / editores
+.DS_Store
+.vscode/
+
+# Resultados temporales (los CSV finales sí se versionan)
+results/tmp/
