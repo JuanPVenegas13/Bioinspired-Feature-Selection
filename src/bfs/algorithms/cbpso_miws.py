@@ -52,9 +52,12 @@ def run(
     fitness: FitnessFn, dim: int, N: int, T: int, rng: np.random.Generator,
     ns: int = 3, c1: float = 2.0, c2: float = 2.0, wmax: float = 0.9,
     wmin: float = 0.4, w0: float = 0.9, p: float = 1.2, vmax: float = 6.0,
-    schemes: tuple[int, ...] = (1, 2, 3, 4),
+    schemes: tuple[int, ...] = (1, 2, 3, 4), transfer: str = "s",
 ) -> Result:
-    """CBPSO-MIWS (Algoritmo 1). Valores por defecto = Tabla 2 del artículo."""
+    """CBPSO-MIWS (Algoritmo 1). Valores por defecto = Tabla 2 del artículo.
+
+    ``transfer="v"`` activa la mejora 1 (función en V); ver ``bpso.v_shaped``.
+    """
     if not 1 <= ns <= N:
         raise ValueError(f"ns debe estar entre 1 y N={N}, recibí {ns}")
 
@@ -84,7 +87,7 @@ def run(
 
             for i in idx:                           # pasos 10-18
                 X[i], V[i] = update_particle(
-                    X[i], V[i], pbest[i], gbest_n[n], w, c1, c2, vmax, rng
+                    X[i], V[i], pbest[i], gbest_n[n], w, c1, c2, vmax, rng, transfer
                 )
                 f = fitness(X[i])
                 if f < fit_p[i]:
@@ -101,3 +104,12 @@ def run(
         mask=Gbest.astype(bool), best_fitness=fit_G, curve=curve,
         extra={"iws_history": iws_history, "species_sizes": [len(s) for s in species]},
     )
+
+
+@register("cbpso_miws_v")
+def run_v(fitness: FitnessFn, dim: int, N: int, T: int, rng: np.random.Generator, **params) -> Result:
+    """Mejora 1: CBPSO-MIWS con función de transferencia en V (|tanh(v)|).
+
+    Todo lo demás (especies, inercia múltiple, Tabla 2) es idéntico a la réplica.
+    """
+    return run(fitness, dim, N, T, rng, **params, transfer="v")

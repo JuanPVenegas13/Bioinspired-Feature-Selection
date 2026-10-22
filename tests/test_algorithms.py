@@ -69,6 +69,21 @@ def test_inertia_schemes_match_equations():
     assert inertia_weight(4, 37, T, rng, **kw) == 0.9
 
 
+def test_v_shaped_transfer():
+    from bfs.algorithms.bpso import update_particle, v_shaped
+
+    # V(v) = |tanh(v)|: simétrica, 0 en v = 0, casi 1 en |v| = 6
+    assert v_shaped(np.array([0.0]))[0] == 0.0
+    assert v_shaped(np.array([-2.0]))[0] == pytest.approx(v_shaped(np.array([2.0]))[0])
+    assert v_shaped(np.array([6.0]))[0] > 0.99
+    # Si la partícula ya está en pbest = gbest y v = 0, con V NO cambia ningún bit
+    # (con la sigmoide cada bit sería un volado)
+    x = np.array([1, 0, 1, 1, 0], dtype=np.int8)
+    rng = np.random.default_rng(0)
+    x_new, v_new = update_particle(x, np.zeros(5), x, x, 0.9, 2, 2, 6, rng, transfer="v")
+    np.testing.assert_array_equal(x_new, x)
+
+
 def test_cbpso_species_and_scheme_selection():
     problem = make_problem()
     res = ALGORITHMS["cbpso_miws"](problem, problem.dim, 10, T, np.random.default_rng(0), ns=3)

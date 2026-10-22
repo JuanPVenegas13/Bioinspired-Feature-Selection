@@ -21,18 +21,45 @@ from bfs.algorithms.base import FitnessFn, Result, random_binary_population, reg
 def update_particle(
     x: np.ndarray, v: np.ndarray, pbest: np.ndarray, gbest: np.ndarray,
     w: float, c1: float, c2: float, vmax: float, rng: np.random.Generator,
+    transfer: str = "s",
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Ecuaciones 1-3 para UNA partícula. Regresa (x_nueva, v_nueva).
+    """Ecuación 1 + función de transferencia para UNA partícula.
 
-    Se reutiliza en CBPSO-MIWS, que solo cambia de dónde salen ``w`` y ``gbest``.
+    Regresa (x_nueva, v_nueva). Se reutiliza en CBPSO-MIWS, que solo cambia
+    de dónde salen ``w`` y ``gbest``.
+
+    transfer = "s" (artículo, ec. 2-3): el bit nuevo es 1 con probabilidad S(v).
+    transfer = "v" (mejora 1, ver ``v_shaped``): el bit se VOLTEA con
+                   probabilidad V(v); si no, conserva su valor.
     """
     dim = x.size
     r1 = rng.random(dim)
     r2 = rng.random(dim)
     v = w * v + c1 * r1 * (pbest - x) + c2 * r2 * (gbest - x)
     v = np.clip(v, -vmax, vmax)
-    x = (rng.random(dim) < sigmoid(v)).astype(np.int8)
+    if transfer == "s":
+        x = (rng.random(dim) < sigmoid(v)).astype(np.int8)
+    elif transfer == "v":
+        flip = rng.random(dim) < v_shaped(v)
+        x = np.where(flip, 1 - x, x).astype(np.int8)
+    else:
+        raise ValueError(f"transfer debe ser 's' o 'v', recibí {transfer!r}")
     return x, v
+
+
+def v_shaped(v: np.ndarray) -> np.ndarray:
+    """Función de transferencia en V: V(v) = |tanh(v)|.
+
+    Mirjalili, S. y Lewis, A. (2013). S-shaped versus V-shaped transfer
+    functions for binary Particle Swarm Optimization. Swarm and Evolutionary
+    Computation, 9, 1-14. https://doi.org/10.1016/j.swevo.2012.09.002
+
+    Diferencia clave con la sigmoide: con v = 0 la probabilidad de cambio es 0
+    (la partícula se queda donde está) y crece con |v| en ambas direcciones.
+    Con la sigmoide, v = 0 da probabilidad 0.5, es decir, bits al azar aun
+    cuando la partícula ya convergió.
+    """
+    return np.abs(np.tanh(v))
 
 
 @register("bpso")
