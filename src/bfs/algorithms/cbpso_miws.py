@@ -25,6 +25,8 @@ Parámetros para la ablación:
 
 from __future__ import annotations
 
+from typing import Callable
+
 import numpy as np
 
 from bfs.algorithms.base import FitnessFn, Result, random_binary_population, register
@@ -53,10 +55,19 @@ def run(
     ns: int = 3, c1: float = 2.0, c2: float = 2.0, wmax: float = 0.9,
     wmin: float = 0.4, w0: float = 0.9, p: float = 1.2, vmax: float = 6.0,
     schemes: tuple[int, ...] = (1, 2, 3, 4), transfer: str = "s",
+    gbest_hook: Callable[..., tuple[np.ndarray, float]] | None = None,
 ) -> Result:
     """CBPSO-MIWS (Algoritmo 1). Valores por defecto = Tabla 2 del artículo.
 
     ``transfer="v"`` activa la mejora 1 (función en V); ver ``bpso.v_shaped``.
+
+    ``gbest_hook`` activa la mejora 2 (búsqueda local; ver
+    ``bfs.algorithms.local_search``). Es un ``callable(Gbest, fit_G, fitness,
+    rng) -> (mask, fit)`` que se llama al final de cada iteración, justo
+    después del paso 20, para intentar refinar el mejor global. Si regresa
+    algo mejor, se adopta como Gbest y se inyecta en la especie líder.
+    Con ``gbest_hook=None`` (por defecto) el algoritmo es **exactamente** la
+    réplica: mismo resultado y mismo consumo de ``rng``.
     """
     if not 1 <= ns <= N:
         raise ValueError(f"ns debe estar entre 1 y N={N}, recibí {ns}")
@@ -98,6 +109,14 @@ def run(
         k = int(np.argmin(fit_gn))                  # paso 20
         if fit_gn[k] < fit_G:
             Gbest, fit_G = gbest_n[k].copy(), fit_gn[k]
+
+        if gbest_hook is not None:                  # mejora 2 (búsqueda local)
+            new_G, new_f = gbest_hook(Gbest, fit_G, fitness, rng)
+            if new_f < fit_G:
+                Gbest, fit_G = new_G.copy(), new_f
+                k = int(np.argmin(fit_gn))          # inyectar en la especie líder
+                gbest_n[k], fit_gn[k] = Gbest.copy(), fit_G
+
         curve[t - 1] = fit_G
 
     return Result(

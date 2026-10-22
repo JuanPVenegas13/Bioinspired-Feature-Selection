@@ -5,6 +5,6 @@ Cada módulo que se importa aquí se registra solo en ``ALGORITHMS``
 """
 
 from bfs.algorithms.base import ALGORITHMS, Result, register
-from bfs.algorithms import bpso, cbpso_miws  # noqa: F401
+from bfs.algorithms import bpso, cbpso_miws, local_search  # noqa: F401
 
 __all__ = ["ALGORITHMS", "Result", "register"]
