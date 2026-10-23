@@ -64,6 +64,33 @@ Las claves ``N`` y ``T`` del diccionario de parámetros sobrescriben los
 valores generales (así funciona el control ``cbpso_miws_T150``).
 """
 
+ETAPA3_METHODS: dict[str, tuple[str, dict]] = {
+    # Sensibilidad al número de especies (el artículo dice que ns = 3 y 4 fueron
+    # los mejores, pero no muestra los resultados). ns = 3 es "cbpso_miws".
+    "cbpso_ns1":  ("cbpso_miws", {"ns": 1}),   # 1 especie de 10 = sin co-evolución
+    "cbpso_ns2":  ("cbpso_miws", {"ns": 2}),   # 5 + 5
+    "cbpso_ns4":  ("cbpso_miws", {"ns": 4}),   # 3 + 3 + 2 + 2
+    "cbpso_ns5":  ("cbpso_miws", {"ns": 5}),   # 2 + 2 + 2 + 2 + 2
+    # Ablación de la inercia múltiple: co-evolución (ns = 3) con UN solo esquema.
+    "cbpso_iws1": ("cbpso_miws", {"schemes": (1,)}),   # lineal decreciente (ec. 6)
+    "cbpso_iws2": ("cbpso_miws", {"schemes": (2,)}),   # aleatoria (ec. 7)
+    "cbpso_iws3": ("cbpso_miws", {"schemes": (3,)}),   # no lineal (ec. 8)
+    "cbpso_iws4": ("cbpso_miws", {"schemes": (4,)}),   # constante (ec. 9)
+}
+"""Configuraciones de la etapa 3 (Arie). Se corren aparte, en ``results/etapa3/``
+(``scripts/run_ablation.py``); no forman parte de la corrida por defecto ni del
+notebook 03. Ablación completa (2 × 2):
+
+    co-evolución   inercia múltiple   configuración
+    sí             sí                 cbpso_miws   (la réplica)
+    no             sí                 cbpso_ns1
+    sí             no                 cbpso_iws1
+    no             no                 bpso         (BPSO estándar, misma inercia que IWS 1)
+"""
+
+ALL_METHODS: dict[str, tuple[str, dict]] = {**METHODS, **ETAPA3_METHODS}
+"""Todo lo que el runner sabe correr. Sin ``methods``, se corre solo ``METHODS``."""
+
 RUN_COLUMNS = [
     "dataset", "method", "run", "split_seed", "algo_seed",
     "best_fitness", "worst_fitness", "mean_fitness", "std_fitness",
@@ -120,10 +147,10 @@ def run_one(dataset: str, method: str, run: int, N: int = 10, T: int = 100,
     """
     if dataset not in DATASETS:
         raise KeyError(f"Base desconocida {dataset!r}. Opciones: {sorted(DATASETS)}")
-    if method not in METHODS:
-        raise KeyError(f"Método desconocido {method!r}. Opciones: {sorted(METHODS)}")
+    if method not in ALL_METHODS:
+        raise KeyError(f"Método desconocido {method!r}. Opciones: {sorted(ALL_METHODS)}")
 
-    algo_name, params = METHODS[method]
+    algo_name, params = ALL_METHODS[method]
     params = dict(params)                      # copia: no mutar METHODS
     N_eff = int(params.pop("N", N))
     T_eff = int(params.pop("T", T))
@@ -275,8 +302,8 @@ def run_experiment(
         if d not in DATASETS:
             raise KeyError(f"Base desconocida {d!r}. Opciones: {sorted(DATASETS)}")
     for m in methods:
-        if m not in METHODS:
-            raise KeyError(f"Método desconocido {m!r}. Opciones: {sorted(METHODS)}")
+        if m not in ALL_METHODS:
+            raise KeyError(f"Método desconocido {m!r}. Opciones: {sorted(ALL_METHODS)}")
 
     df, curves, evals = _load_previous(out_dir)
     ya_hechas = set(zip(df["dataset"], df["method"], df["run"])) if len(df) else set()
