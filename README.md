@@ -114,7 +114,7 @@ estadística la recogen sin más cambios:
 
 - [x] Etapa 1 (Arie) — datos, fitness, BPSO, CBPSO-MIWS, notebook 01, mejora 1 (función en V)
 - [x] Etapa 2 (Juan Pablo) — mejora 2 (búsqueda local), runner de 30 corridas, Wilcoxon, notebook 03
-- [ ] Etapa 3 (Arie) — réplica vs. artículo, óptimo exacto, sensibilidad a `ns`, ablación, notebook 02
+- [x] Etapa 3 (Arie) — réplica vs. artículo, óptimo exacto, sensibilidad a `ns`, ablación, notebook 02
 - [ ] Etapa 4 (ambos) — póster
 
 ## Problemas comunes
